@@ -1,0 +1,914 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Neural Network Builder</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #1c2430;
+      --muted: #5f6b7a;
+      --line: #d8dee8;
+      --soft: #f4f7fb;
+      --panel: #ffffff;
+      --accent: #276ef1;
+      --accent-2: #10a37f;
+      --danger: #c03221;
+      --code-bg: #101722;
+      --code-ink: #e8edf6;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      background: #eef2f7;
+    }
+
+    button,
+    input,
+    select {
+      font: inherit;
+    }
+
+    button {
+      border: 1px solid transparent;
+      border-radius: 6px;
+      cursor: pointer;
+      min-height: 38px;
+      transition: background 140ms ease, border-color 140ms ease, transform 140ms ease;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+    }
+
+    button:focus-visible,
+    input:focus-visible,
+    select:focus-visible {
+      outline: 3px solid rgba(39, 110, 241, 0.25);
+      outline-offset: 2px;
+    }
+
+    .app {
+      min-height: 100vh;
+      display: grid;
+      grid-template-rows: auto 1fr;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      padding: 16px 22px;
+      background: var(--panel);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .brand-mark {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      color: white;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      font-weight: 800;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 1.15rem;
+      line-height: 1.2;
+    }
+
+    .subtitle {
+      margin: 2px 0 0;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .workspace {
+      display: grid;
+      grid-template-columns: minmax(280px, 350px) minmax(380px, 1fr) minmax(360px, 520px);
+      min-height: 0;
+    }
+
+    .pane {
+      min-height: 0;
+      overflow: auto;
+      border-right: 1px solid var(--line);
+      background: var(--panel);
+    }
+
+    .pane.visual {
+      background: var(--soft);
+    }
+
+    .pane.code {
+      border-right: 0;
+      background: #f9fbfd;
+    }
+
+    .section {
+      padding: 18px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .section:last-child {
+      border-bottom: 0;
+    }
+
+    .section h2 {
+      margin: 0 0 14px;
+      font-size: 0.95rem;
+    }
+
+    .field-grid {
+      display: grid;
+      gap: 12px;
+    }
+
+    .field-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    label {
+      display: grid;
+      gap: 6px;
+      color: var(--muted);
+      font-size: 0.82rem;
+      font-weight: 650;
+    }
+
+    input,
+    select {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: white;
+      color: var(--ink);
+      min-height: 38px;
+      padding: 8px 10px;
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .primary {
+      background: var(--accent);
+      color: white;
+      padding: 8px 12px;
+    }
+
+    .secondary {
+      background: white;
+      color: var(--ink);
+      border-color: var(--line);
+      padding: 8px 12px;
+    }
+
+    .danger {
+      color: var(--danger);
+      background: #fff5f3;
+      border-color: #f3c7bf;
+      width: 38px;
+      padding: 0;
+      flex: 0 0 38px;
+    }
+
+    .layer-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .layer-item {
+      display: grid;
+      grid-template-columns: 1fr 1fr 38px;
+      gap: 8px;
+      align-items: end;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fbfcff;
+    }
+
+    .diagram-wrap {
+      height: 100%;
+      min-height: 560px;
+      padding: 18px;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      gap: 14px;
+    }
+
+    .diagram-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .stats {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      color: var(--muted);
+      font-size: 0.84rem;
+    }
+
+    .stat {
+      padding: 6px 8px;
+      border-radius: 6px;
+      background: white;
+      border: 1px solid var(--line);
+    }
+
+    .canvas-panel {
+      min-height: 420px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: white;
+      overflow: hidden;
+      position: relative;
+    }
+
+    svg {
+      width: 100%;
+      height: 100%;
+      min-height: 420px;
+      display: block;
+    }
+
+    .edge {
+      stroke: #c8d1dd;
+      stroke-width: 1.2;
+    }
+
+    .node {
+      stroke: #243244;
+      stroke-width: 1.6;
+    }
+
+    .node.input {
+      fill: #e9f1ff;
+    }
+
+    .node.hidden {
+      fill: #ecfbf6;
+    }
+
+    .node.output {
+      fill: #fff3e3;
+    }
+
+    .layer-label {
+      fill: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+      text-anchor: middle;
+    }
+
+    .diagram-note {
+      color: var(--muted);
+      font-size: 0.88rem;
+      margin: 0;
+    }
+
+    .code-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 18px 18px 12px;
+    }
+
+    .code-header h2 {
+      margin: 0;
+      font-size: 0.95rem;
+    }
+
+    .code-actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .copy-status {
+      color: var(--accent-2);
+      font-size: 0.85rem;
+      min-width: 48px;
+    }
+
+    pre {
+      margin: 0 18px 18px;
+      min-height: 520px;
+      overflow: auto;
+      padding: 16px;
+      border-radius: 8px;
+      background: var(--code-bg);
+      color: var(--code-ink);
+      border: 1px solid #263346;
+      line-height: 1.45;
+      tab-size: 4;
+    }
+
+    code {
+      font-family: "Cascadia Code", Consolas, "Liberation Mono", monospace;
+      font-size: 0.88rem;
+    }
+
+    @media (max-width: 1120px) {
+      .workspace {
+        grid-template-columns: 330px 1fr;
+      }
+
+      .pane.code {
+        grid-column: 1 / -1;
+        border-top: 1px solid var(--line);
+      }
+    }
+
+    @media (max-width: 760px) {
+      .topbar {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .workspace {
+        display: block;
+      }
+
+      .pane {
+        border-right: 0;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .field-row,
+      .layer-item {
+        grid-template-columns: 1fr;
+      }
+
+      .danger {
+        width: 100%;
+      }
+
+      .diagram-wrap {
+        min-height: 500px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">NN</div>
+        <div>
+          <h1>Neural Network Builder</h1>
+          <p class="subtitle">Design a feed-forward model and copy the generated code.</p>
+        </div>
+      </div>
+      <div class="toolbar">
+        <button class="secondary" id="resetBtn" type="button" title="Reset to a small starter model">Reset</button>
+        <button class="primary" id="copyTopBtn" type="button" title="Copy generated code">Copy Code</button>
+      </div>
+    </header>
+
+    <div class="workspace">
+      <aside class="pane controls">
+        <section class="section">
+          <h2>Model Shape</h2>
+          <div class="field-grid">
+            <div class="field-row">
+              <label>
+                Inputs
+                <input id="inputSize" type="number" min="1" max="128" step="1" value="8">
+              </label>
+              <label>
+                Outputs
+                <input id="outputSize" type="number" min="1" max="128" step="1" value="2">
+              </label>
+            </div>
+            <div class="field-row">
+              <label>
+                Output activation
+                <select id="outputActivation">
+                  <option value="none">None</option>
+                  <option value="sigmoid">Sigmoid</option>
+                  <option value="softmax">Softmax</option>
+                  <option value="tanh">Tanh</option>
+                </select>
+              </label>
+              <label>
+                Framework
+                <select id="framework">
+                  <option value="pytorch">PyTorch</option>
+                  <option value="keras">Keras</option>
+                </select>
+              </label>
+            </div>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="diagram-head">
+            <h2>Hidden Layers</h2>
+            <button class="primary" id="addLayerBtn" type="button" title="Add hidden layer">Add Layer</button>
+          </div>
+          <div class="layer-list" id="layerList" aria-live="polite"></div>
+        </section>
+
+        <section class="section">
+          <h2>Training Stub</h2>
+          <div class="field-grid">
+            <div class="field-row">
+              <label>
+                Loss
+                <select id="loss">
+                  <option value="cross_entropy">Cross entropy</option>
+                  <option value="binary_cross_entropy">Binary cross entropy</option>
+                  <option value="mse">Mean squared error</option>
+                </select>
+              </label>
+              <label>
+                Optimizer
+                <select id="optimizer">
+                  <option value="adam">Adam</option>
+                  <option value="sgd">SGD</option>
+                  <option value="rmsprop">RMSprop</option>
+                </select>
+              </label>
+            </div>
+            <div class="field-row">
+              <label>
+                Learning rate
+                <input id="learningRate" type="number" min="0.00001" max="1" step="0.0001" value="0.001">
+              </label>
+              <label>
+                Batch size
+                <input id="batchSize" type="number" min="1" max="4096" step="1" value="32">
+              </label>
+            </div>
+          </div>
+        </section>
+      </aside>
+
+      <section class="pane visual">
+        <div class="diagram-wrap">
+          <div class="diagram-head">
+            <h2>Network Diagram</h2>
+            <div class="stats" id="stats"></div>
+          </div>
+          <div class="canvas-panel">
+            <svg id="networkSvg" role="img" aria-label="Neural network diagram"></svg>
+          </div>
+          <p class="diagram-note">Large layers are compacted visually; the generated code still uses the exact sizes.</p>
+        </div>
+      </section>
+
+      <section class="pane code">
+        <div class="code-header">
+          <h2>Generated Code</h2>
+          <div class="code-actions">
+            <span class="copy-status" id="copyStatus" aria-live="polite"></span>
+            <button class="primary" id="copyBtn" type="button" title="Copy generated code">Copy</button>
+          </div>
+        </div>
+        <pre><code id="codeBlock"></code></pre>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    const activationOptions = ["relu", "leaky_relu", "tanh", "sigmoid", "gelu", "elu", "none"];
+
+    const state = {
+      hiddenLayers: [
+        { units: 32, activation: "relu" },
+        { units: 16, activation: "relu" }
+      ]
+    };
+
+    const elements = {
+      inputSize: document.getElementById("inputSize"),
+      outputSize: document.getElementById("outputSize"),
+      outputActivation: document.getElementById("outputActivation"),
+      framework: document.getElementById("framework"),
+      layerList: document.getElementById("layerList"),
+      addLayerBtn: document.getElementById("addLayerBtn"),
+      resetBtn: document.getElementById("resetBtn"),
+      copyBtn: document.getElementById("copyBtn"),
+      copyTopBtn: document.getElementById("copyTopBtn"),
+      copyStatus: document.getElementById("copyStatus"),
+      codeBlock: document.getElementById("codeBlock"),
+      networkSvg: document.getElementById("networkSvg"),
+      stats: document.getElementById("stats"),
+      loss: document.getElementById("loss"),
+      optimizer: document.getElementById("optimizer"),
+      learningRate: document.getElementById("learningRate"),
+      batchSize: document.getElementById("batchSize")
+    };
+
+    function clampNumber(value, min, max, fallback) {
+      const parsed = Number(value);
+      if (!Number.isFinite(parsed)) return fallback;
+      return Math.max(min, Math.min(max, Math.round(parsed)));
+    }
+
+    function activationLabel(value) {
+      return value
+        .split("_")
+        .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+        .join(" ");
+    }
+
+    function renderLayerControls() {
+      elements.layerList.innerHTML = "";
+
+      state.hiddenLayers.forEach((layer, index) => {
+        const item = document.createElement("div");
+        item.className = "layer-item";
+
+        const unitsLabel = document.createElement("label");
+        unitsLabel.textContent = `Layer ${index + 1} units`;
+        const unitsInput = document.createElement("input");
+        unitsInput.type = "number";
+        unitsInput.min = "1";
+        unitsInput.max = "512";
+        unitsInput.step = "1";
+        unitsInput.value = layer.units;
+        unitsInput.addEventListener("input", () => {
+          layer.units = clampNumber(unitsInput.value, 1, 512, 16);
+          update();
+        });
+        unitsLabel.appendChild(unitsInput);
+
+        const activationLabelEl = document.createElement("label");
+        activationLabelEl.textContent = "Activation";
+        const activationSelect = document.createElement("select");
+        activationOptions.forEach((option) => {
+          const opt = document.createElement("option");
+          opt.value = option;
+          opt.textContent = activationLabel(option);
+          activationSelect.appendChild(opt);
+        });
+        activationSelect.value = layer.activation;
+        activationSelect.addEventListener("change", () => {
+          layer.activation = activationSelect.value;
+          update();
+        });
+        activationLabelEl.appendChild(activationSelect);
+
+        const removeBtn = document.createElement("button");
+        removeBtn.type = "button";
+        removeBtn.className = "danger";
+        removeBtn.textContent = "X";
+        removeBtn.title = `Remove layer ${index + 1}`;
+        removeBtn.setAttribute("aria-label", `Remove hidden layer ${index + 1}`);
+        removeBtn.addEventListener("click", () => {
+          state.hiddenLayers.splice(index, 1);
+          renderLayerControls();
+          update();
+        });
+
+        item.append(unitsLabel, activationLabelEl, removeBtn);
+        elements.layerList.appendChild(item);
+      });
+    }
+
+    function getConfig() {
+      return {
+        inputs: clampNumber(elements.inputSize.value, 1, 128, 8),
+        outputs: clampNumber(elements.outputSize.value, 1, 128, 2),
+        outputActivation: elements.outputActivation.value,
+        framework: elements.framework.value,
+        loss: elements.loss.value,
+        optimizer: elements.optimizer.value,
+        learningRate: Number(elements.learningRate.value) || 0.001,
+        batchSize: clampNumber(elements.batchSize.value, 1, 4096, 32),
+        hiddenLayers: state.hiddenLayers.map((layer) => ({
+          units: clampNumber(layer.units, 1, 512, 16),
+          activation: layer.activation
+        }))
+      };
+    }
+
+    function pytorchActivation(name, indent = "            ") {
+      const map = {
+        relu: "nn.ReLU()",
+        leaky_relu: "nn.LeakyReLU(negative_slope=0.01)",
+        tanh: "nn.Tanh()",
+        sigmoid: "nn.Sigmoid()",
+        gelu: "nn.GELU()",
+        elu: "nn.ELU()",
+        softmax: "nn.Softmax(dim=1)"
+      };
+      if (name === "none") return [];
+      return [`${indent}${map[name]},`];
+    }
+
+    function kerasActivation(name) {
+      const map = {
+        relu: "relu",
+        tanh: "tanh",
+        sigmoid: "sigmoid",
+        gelu: "gelu",
+        elu: "elu",
+        softmax: "softmax",
+        none: "linear"
+      };
+      return map[name];
+    }
+
+    function generatePyTorch(config) {
+      const lines = [
+        "import torch",
+        "from torch import nn",
+        "",
+        "",
+        "class NeuralNetwork(nn.Module):",
+        "    def __init__(self):",
+        "        super().__init__()",
+        "        self.model = nn.Sequential("
+      ];
+
+      let previous = config.inputs;
+      config.hiddenLayers.forEach((layer, index) => {
+        lines.push(`            nn.Linear(${previous}, ${layer.units}),`);
+        lines.push(...pytorchActivation(layer.activation));
+        previous = layer.units;
+      });
+
+      lines.push(`            nn.Linear(${previous}, ${config.outputs}),`);
+      lines.push(...pytorchActivation(config.outputActivation));
+      lines.push(
+        "        )",
+        "",
+        "    def forward(self, x):",
+        "        return self.model(x)",
+        "",
+        "",
+        "model = NeuralNetwork()"
+      );
+
+      const lossMap = {
+        cross_entropy: "nn.CrossEntropyLoss()",
+        binary_cross_entropy: "nn.BCEWithLogitsLoss()",
+        mse: "nn.MSELoss()"
+      };
+      const optimizerMap = {
+        adam: "torch.optim.Adam",
+        sgd: "torch.optim.SGD",
+        rmsprop: "torch.optim.RMSprop"
+      };
+
+      lines.push(
+        `criterion = ${lossMap[config.loss]}`,
+        `optimizer = ${optimizerMap[config.optimizer]}(model.parameters(), lr=${config.learningRate})`,
+        "",
+        "# Example training step:",
+        `# x_batch = torch.randn(${config.batchSize}, ${config.inputs})`,
+        "# y_batch = ...",
+        "# optimizer.zero_grad()",
+        "# predictions = model(x_batch)",
+        "# loss = criterion(predictions, y_batch)",
+        "# loss.backward()",
+        "# optimizer.step()"
+      );
+
+      return lines.join("\n");
+    }
+
+    function generateKeras(config) {
+      const lines = [
+        "import tensorflow as tf",
+        "from tensorflow import keras",
+        "from tensorflow.keras import layers",
+        "",
+        "",
+        "model = keras.Sequential([",
+        `    layers.Input(shape=(${config.inputs},)),`
+      ];
+
+      config.hiddenLayers.forEach((layer) => {
+        if (layer.activation === "leaky_relu") {
+          lines.push(`    layers.Dense(${layer.units}),`);
+          lines.push("    layers.LeakyReLU(negative_slope=0.01),");
+        } else {
+          lines.push(`    layers.Dense(${layer.units}, activation="${kerasActivation(layer.activation)}"),`);
+        }
+      });
+      if (config.outputActivation === "leaky_relu") {
+        lines.push(`    layers.Dense(${config.outputs}),`);
+        lines.push("    layers.LeakyReLU(negative_slope=0.01),");
+      } else {
+        lines.push(`    layers.Dense(${config.outputs}, activation="${kerasActivation(config.outputActivation)}"),`);
+      }
+      lines.push("])");
+
+      const lossMap = {
+        cross_entropy: "sparse_categorical_crossentropy",
+        binary_cross_entropy: "binary_crossentropy",
+        mse: "mse"
+      };
+      const optimizerMap = {
+        adam: `keras.optimizers.Adam(learning_rate=${config.learningRate})`,
+        sgd: `keras.optimizers.SGD(learning_rate=${config.learningRate})`,
+        rmsprop: `keras.optimizers.RMSprop(learning_rate=${config.learningRate})`
+      };
+
+      lines.push(
+        "",
+        "model.compile(",
+        `    optimizer=${optimizerMap[config.optimizer]},`,
+        `    loss="${lossMap[config.loss]}",`,
+        "    metrics=[\"accuracy\"]",
+        ")",
+        "",
+        "# Example training call:",
+        `# model.fit(x_train, y_train, batch_size=${config.batchSize}, epochs=10, validation_split=0.2)`
+      );
+
+      return lines.join("\n");
+    }
+
+    function generateCode(config) {
+      if (config.framework === "keras") {
+        return generateKeras(config);
+      }
+      return generatePyTorch(config);
+    }
+
+    function visibleNodeCount(size) {
+      if (size <= 8) return size;
+      return 9;
+    }
+
+    function layerNodes(size, x, height) {
+      const count = visibleNodeCount(size);
+      const top = 58;
+      const bottom = height - 68;
+      const usable = Math.max(1, bottom - top);
+      const gap = count === 1 ? 0 : usable / (count - 1);
+      return Array.from({ length: count }, (_, index) => ({
+        x,
+        y: count === 1 ? height / 2 : top + gap * index,
+        compactMarker: size > 8 && index === Math.floor(count / 2)
+      }));
+    }
+
+    function renderDiagram(config) {
+      const svg = elements.networkSvg;
+      const width = Math.max(620, svg.clientWidth || 620);
+      const height = Math.max(420, svg.clientHeight || 420);
+      const layers = [
+        { name: "Input", size: config.inputs, kind: "input" },
+        ...config.hiddenLayers.map((layer, index) => ({
+          name: `Hidden ${index + 1}`,
+          size: layer.units,
+          kind: "hidden",
+          activation: activationLabel(layer.activation)
+        })),
+        { name: "Output", size: config.outputs, kind: "output", activation: activationLabel(config.outputActivation) }
+      ];
+
+      const xGap = layers.length === 1 ? 0 : (width - 110) / (layers.length - 1);
+      const positioned = layers.map((layer, index) => ({
+        ...layer,
+        x: 55 + xGap * index,
+        nodes: layerNodes(layer.size, 55 + xGap * index, height)
+      }));
+
+      const edgeLines = [];
+      for (let i = 0; i < positioned.length - 1; i += 1) {
+        positioned[i].nodes.forEach((from) => {
+          positioned[i + 1].nodes.forEach((to) => {
+            if (!from.compactMarker && !to.compactMarker) {
+              edgeLines.push(`<line class="edge" x1="${from.x}" y1="${from.y}" x2="${to.x}" y2="${to.y}"></line>`);
+            }
+          });
+        });
+      }
+
+      const nodeMarkup = positioned.flatMap((layer) => {
+        const nodes = layer.nodes.map((node) => {
+          if (node.compactMarker) {
+            return `<text x="${node.x}" y="${node.y + 5}" text-anchor="middle" fill="#5f6b7a" font-size="20" font-weight="800">...</text>`;
+          }
+          return `<circle class="node ${layer.kind}" cx="${node.x}" cy="${node.y}" r="11"></circle>`;
+        });
+        const label = `<text class="layer-label" x="${layer.x}" y="28">${layer.name}</text>`;
+        const size = `<text class="layer-label" x="${layer.x}" y="${height - 22}">${layer.size}${layer.activation ? `, ${layer.activation}` : ""}</text>`;
+        return [label, ...nodes, size];
+      });
+
+      svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
+      svg.innerHTML = edgeLines.concat(nodeMarkup).join("");
+    }
+
+    function renderStats(config) {
+      const sizes = [config.inputs, ...config.hiddenLayers.map((layer) => layer.units), config.outputs];
+      let parameters = 0;
+      for (let i = 0; i < sizes.length - 1; i += 1) {
+        parameters += sizes[i] * sizes[i + 1] + sizes[i + 1];
+      }
+
+      elements.stats.innerHTML = [
+        `<span class="stat">${config.hiddenLayers.length} hidden layer${config.hiddenLayers.length === 1 ? "" : "s"}</span>`,
+        `<span class="stat">${parameters.toLocaleString()} parameters</span>`,
+        `<span class="stat">${config.framework === "keras" ? "Keras" : "PyTorch"}</span>`
+      ].join("");
+    }
+
+    function update() {
+      const config = getConfig();
+      const code = generateCode(config);
+      elements.codeBlock.textContent = code;
+      renderDiagram(config);
+      renderStats(config);
+      elements.copyStatus.textContent = "";
+    }
+
+    async function copyCode() {
+      try {
+        await navigator.clipboard.writeText(elements.codeBlock.textContent);
+        elements.copyStatus.textContent = "Copied";
+      } catch (error) {
+        const selection = window.getSelection();
+        const range = document.createRange();
+        range.selectNodeContents(elements.codeBlock);
+        selection.removeAllRanges();
+        selection.addRange(range);
+        elements.copyStatus.textContent = "Selected";
+      }
+      window.setTimeout(() => {
+        elements.copyStatus.textContent = "";
+      }, 1800);
+    }
+
+    function reset() {
+      elements.inputSize.value = 8;
+      elements.outputSize.value = 2;
+      elements.outputActivation.value = "none";
+      elements.framework.value = "pytorch";
+      elements.loss.value = "cross_entropy";
+      elements.optimizer.value = "adam";
+      elements.learningRate.value = 0.001;
+      elements.batchSize.value = 32;
+      state.hiddenLayers = [
+        { units: 32, activation: "relu" },
+        { units: 16, activation: "relu" }
+      ];
+      renderLayerControls();
+      update();
+    }
+
+    elements.addLayerBtn.addEventListener("click", () => {
+      state.hiddenLayers.push({ units: 16, activation: "relu" });
+      renderLayerControls();
+      update();
+    });
+
+    elements.resetBtn.addEventListener("click", reset);
+    elements.copyBtn.addEventListener("click", copyCode);
+    elements.copyTopBtn.addEventListener("click", copyCode);
+
+    [
+      elements.inputSize,
+      elements.outputSize,
+      elements.outputActivation,
+      elements.framework,
+      elements.loss,
+      elements.optimizer,
+      elements.learningRate,
+      elements.batchSize
+    ].forEach((element) => element.addEventListener("input", update));
+
+    window.addEventListener("resize", update);
+
+    renderLayerControls();
+    update();
+  </script>
+</body>
+</html>
